@@ -1,0 +1,19 @@
+[package]
+name = "vivi-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+poise = "0.6.1"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+bson = { version = "2", features = ["chrono-0_4"] }
+serde = "1"
+chrono = "0.4"
+mongodb = "3.0"
+dotenv = "0.15"
+strum = "0.26"
+strum_macros = "0.26"
+anyhow = "1.0.86"
+duration-string = "0.4.0"
+uuid = { version = "1.10.0", features = ["v4", "fast-rng"] }
+futures = "0.3.30"
