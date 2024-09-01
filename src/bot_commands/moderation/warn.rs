@@ -23,7 +23,7 @@ pub async fn warn_user(
 
     let guild_config = get_guild_config(guild.id, mongo_config).await?;
     #[allow(clippy::cast_possible_wrap)]
-    /// warn_life_span will be guarded by the configuration command.
+    // warn_life_span will be guarded by the configuration command.
     let expiration_date = Utc::now() - TimeDelta::days(guild_config.warn_life_span as i64);
 
     let active_warns =
@@ -47,14 +47,16 @@ pub async fn warn_user(
     )
     .await?;
 
-    if active_warns.len() + 1 >= guild_config.max_warns {
-        let message = format!(
-            "You've been warned in **{}**\nDue to exceeding the warn limit, you've been banned.\n\n**Reason**: {}",
-            guild.name,
-            reason
-        );
+    let message = format!(
+        "You've been warned in **{}**\n\n**Reason**: {}",
+        guild.name,
+        reason
+    );
+    let builder = CreateMessage::new().content(message);
+    let _ = user.dm(ctx.http(), builder).await;
 
-        let builder = CreateMessage::new().content(message);
+    if active_warns.len() + 1 >= guild_config.max_warns {
+        let builder = CreateMessage::new().content(String::from("Due to exceeding the warn limit, you've been banned."));
         let _ = user.dm(ctx.http(), builder).await;
 
         let _ = match guild.ban(ctx.http(), &user, 0).await {
