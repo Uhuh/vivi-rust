@@ -23,19 +23,3 @@ pub use setup::*;
 pub use warn_expire::*;
 pub use warns_max::*;
 pub use whitelist::*;
-
-// #[group]
-// #[commands(
-//     ban_message,
-//     ban_word,
-//     config,
-//     join_role,
-//     logs,
-//     mod_role,
-//     mute_role,
-//     setup,
-//     warn_expire,
-//     warns_max,
-//     whitelist
-// )]
-// struct Config;

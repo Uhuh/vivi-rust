@@ -1,8 +1,8 @@
-use bson::{doc, oid::ObjectId, Document, Uuid};
-use chrono::{DateTime, Local, Utc};
+use bson::{doc, oid::ObjectId, Uuid};
+use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
 use mongodb::Database;
-use poise::serenity_prelude::{GuildId, MessageId, UserId};
+use poise::serenity_prelude::{GuildId, UserId};
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 
@@ -17,6 +17,7 @@ pub enum CaseType {
     Unwarn,
 }
 
+#[allow(clippy::struct_field_names)]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Case {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
@@ -28,9 +29,9 @@ pub struct Case {
     mod_id: UserId,
     reason: String,
     #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
-    punishment_length: chrono::DateTime<Utc>,
+    punishment_length: DateTime<Utc>,
     #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
-    creation_date: chrono::DateTime<Utc>,
+    creation_date: DateTime<Utc>,
 }
 
 pub async fn get_user_warns(
@@ -76,7 +77,7 @@ pub async fn create_new_case(
     guild_id: GuildId,
     user_id: UserId,
     mod_id: UserId,
-    reason: &String,
+    reason: &str,
     case_type: CaseType,
     database: &Database,
 ) -> anyhow::Result<()> {
@@ -87,15 +88,13 @@ pub async fn create_new_case(
         guild_id,
         user_id,
         mod_id,
-        reason: reason.clone(),
+        reason: reason.to_string(),
         creation_date: Utc::now(),
         // @TODO - Figure out how to make this optional
         punishment_length: Utc::now(),
     };
 
-    let _ = database.collection("cases")
-        .insert_one(case)
-        .await?;
+    let _ = database.collection("cases").insert_one(case).await?;
 
     Ok(())
 }

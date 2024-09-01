@@ -1,4 +1,19 @@
-use bot_commands::*;
+#![warn(
+    trivial_casts,
+    trivial_numeric_casts,
+    unused_extern_crates,
+    unused_import_braces,
+    unused_qualifications,
+    unused_results,
+    clippy::all,
+    clippy::pedantic,
+    clippy::style,
+    clippy::unwrap_used
+)]
+#![allow(clippy::missing_errors_doc, clippy::module_name_repetitions, clippy::expect_used)]
+#![forbid(unsafe_code)]
+
+use bot_commands::{ban_user, change_reason, check_warns, clear_warns, kick_user, mute_user, unban, unmute, unwarn};
 use mongodb::options::ClientOptions;
 use mongodb::{Client as MongoClient, Database};
 use poise::serenity_prelude as serenity;
@@ -20,25 +35,13 @@ impl TypeMapKey for MongoConfig {
 
 pub struct Data {
     mongo_config: MongoConfig,
-} // User data, which is stored and accessible in all command invocations
+}
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
 
-/// Displays your or another user's account creation date
-#[poise::command(slash_command, prefix_command)]
-async fn age(
-    ctx: Context<'_>,
-    #[description = "Selected user"] user: Option<serenity::User>,
-) -> Result<(), Error> {
-    let u = user.as_ref().unwrap_or_else(|| ctx.author());
-    let response = format!("{}'s account was created at {}", u.name, u.created_at());
-    ctx.say(response).await?;
-    Ok(())
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    dotenv::dotenv().expect("Failed to load .env file");
+    let _ = dotenv::dotenv().expect("Failed to load .env file");
 
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     let mongodb_uri = env::var("MONGODB_URI").expect("You must set the MONGODB_URI");
@@ -52,7 +55,6 @@ async fn main() -> anyhow::Result<()> {
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![
-                age(),
                 warn_user(),
                 unwarn(),
                 unmute(),
@@ -87,7 +89,7 @@ async fn main() -> anyhow::Result<()> {
         .framework(framework)
         .await?;
 
-    client.start().await.unwrap();
+    client.start().await?;
 
     Ok(())
 }
