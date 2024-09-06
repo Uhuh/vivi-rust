@@ -1,9 +1,9 @@
 use bson::{doc, oid::ObjectId};
+use mongodb::Database;
 use poise::serenity_prelude as serenity;
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, GuildId, RoleId};
 
-use crate::MongoConfig;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -47,12 +47,9 @@ pub fn create_new_guild_config(guild_id: GuildId) -> GuildConfig {
 
 pub async fn get_guild_config(
     guild_id: GuildId,
-    mongo_config: &MongoConfig,
+    database: &Database,
 ) -> anyhow::Result<GuildConfig> {
-    let guild_configs = mongo_config
-        .database
-        .collection::<GuildConfig>("guildconfigs");
-
+    let guild_configs = database.collection::<GuildConfig>("guildconfigs");
     let guild_config = guild_configs
         .find_one(doc! { "guildId": guild_id.to_string() })
         .await?;
