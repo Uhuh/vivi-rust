@@ -1,5 +1,5 @@
 use crate::bot_commands::command_helpers::mod_check;
-use crate::schemas::{create_new_case, get_guild_config, get_users_active_warns};
+use crate::schemas::{get_guild_config, get_users_active_warns, Case, CaseType};
 use crate::{Context, Error};
 use chrono::{TimeDelta, Utc};
 use poise::serenity_prelude::{self as serenity, CreateMessage};
@@ -21,7 +21,7 @@ pub async fn warn_user(
     let data = ctx.data();
     let mongo_config = &data.mongo_config;
 
-    let guild_config = get_guild_config(guild.id, mongo_config).await?;
+    let guild_config = get_guild_config(guild.id, &mongo_config.database).await?;
     #[allow(clippy::cast_possible_wrap)]
     // warn_life_span will be guarded by the configuration command.
     let expiration_date = Utc::now() - TimeDelta::days(guild_config.warn_life_span as i64);
@@ -37,15 +37,17 @@ pub async fn warn_user(
         ))
         .await?;
 
-    create_new_case(
-        guild.id,
-        user.id,
-        ctx.author().id,
-        &reason,
-        crate::schemas::CaseType::Warn,
-        &mongo_config.database,
-    )
-    .await?;
+    let case = Case {
+        guild_id: guild.id,
+        user_id: user.id,
+        mod_id: ctx.author().id,
+        reason: reason.clone(),
+        case_type: CaseType::Warn,
+        ..Default::default()
+    };
+    
+    case.save(&mongo_config.database).await?;
+    case.announce_to_mod_logs(&ctx, &mongo_config.database).await?;
 
     let message = format!(
         "You've been warned in **{}**\n\n**Reason**: {}",
