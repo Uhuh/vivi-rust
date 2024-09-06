@@ -16,7 +16,7 @@
 use bot_commands::{ban_user, change_reason, check_warns, clear_warns, kick_user, mute_user, unban, unmute, unwarn};
 use mongodb::options::ClientOptions;
 use mongodb::{Client as MongoClient, Database};
-use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::{self as serenity};
 use poise::serenity_prelude::prelude::*;
 use std::env;
 use std::sync::Arc;
