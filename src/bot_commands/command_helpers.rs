@@ -9,20 +9,17 @@ pub async fn mod_check(ctx: Context<'_>) -> Result<bool, Error> {
         println!("Message did not originate from guild");
         return Ok(false);
     };
-    
+
     let data = ctx.data();
 
-    let config = get_guild_config(guild_id, &data.mongo_config).await?;
+    let config = get_guild_config(guild_id, &data.mongo_config.database).await?;
 
     let Some(mod_role_id) = config.mod_role_id else {
         println!("Guild does not have mod role configured.");
         return Ok(false);
     };
 
-    let has_role = ctx
-        .author()
-        .has_role(&ctx, guild_id, &mod_role_id)
-        .await?;
+    let has_role = ctx.author().has_role(&ctx, guild_id, &mod_role_id).await?;
 
     Ok(has_role)
 }
