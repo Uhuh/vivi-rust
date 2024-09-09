@@ -38,17 +38,16 @@ pub struct Case {
     pub creation_date: DateTime<Utc>,
 }
 
-impl Default for Case {
-    fn default() -> Self {
+impl Case {
+    pub fn new(guild_id: GuildId, user_id: UserId, mod_id: UserId, reason: String, case_type: CaseType) -> Self {
         Self {
+            guild_id,
+            user_id,
+            mod_id,
+            reason,
+            case_type,
             id: None,
             case_id: Uuid::new(),
-            case_type: CaseType::Warn,
-            // These probably shouldn't be set to 1, but not sure how to handle it right now.
-            guild_id: GuildId::new(1),
-            user_id: UserId::new(1),
-            mod_id: UserId::new(1),
-            reason: String::new(),
             creation_date: Utc::now(),
             punishment_length: Utc::now(),
         }
@@ -79,7 +78,6 @@ impl Case {
 
         match channel {
             Some(channel) => {
-                println!("hello");
                 let embed = create_case_embed(self);
                 let message = CreateMessage::new().embed(embed);
                 let _ = channel.send_message(&ctx, message).await?;

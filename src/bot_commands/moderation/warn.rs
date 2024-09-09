@@ -3,6 +3,7 @@ use crate::schemas::{get_guild_config, get_users_active_warns, Case, CaseType};
 use crate::{Context, Error};
 use chrono::{TimeDelta, Utc};
 use poise::serenity_prelude::{self as serenity, CreateMessage};
+use poise::CreateReply;
 
 #[poise::command(slash_command, prefix_command, aliases("warn"), check = "mod_check")]
 pub async fn warn_user(
@@ -13,10 +14,6 @@ pub async fn warn_user(
     let Some(guild) = ctx.guild().map(|guild| guild.clone()) else {
         return Err("Failed to grab Guild for warn_user.".into());
     };
-
-    if user.bot {
-        let _ = ctx.reply("You're warning a bot.").await?;
-    }
 
     let data = ctx.data();
     let mongo_config = &data.mongo_config;
@@ -30,40 +27,39 @@ pub async fn warn_user(
         get_users_active_warns(guild.id, user.id, expiration_date, &mongo_config.database).await?;
 
     let _ = ctx
-        .reply(format!(
+        .say(format!(
             "{} currently has {} active warnings.",
             user.name,
             active_warns.len()
         ))
         .await?;
 
-    let case = Case {
-        guild_id: guild.id,
-        user_id: user.id,
-        mod_id: ctx.author().id,
-        reason: reason.clone(),
-        case_type: CaseType::Warn,
-        ..Default::default()
-    };
-    
-    case.save(&mongo_config.database).await?;
-    case.announce_to_mod_logs(&ctx, &mongo_config.database).await?;
-
-    let message = format!(
-        "You've been warned in **{}**\n\n**Reason**: {}",
-        guild.name,
-        reason
+    let case = Case::new(
+        guild.id,
+        user.id,
+        ctx.author().id,
+        reason.clone(),
+        CaseType::Warn,
     );
+
+    case.save(&mongo_config.database).await?;
+    case.announce_to_mod_logs(&ctx, &mongo_config.database)
+        .await?;
+
+    let message = format!("You've been warned in **{}**\n\n**Reason**: {reason}", guild.name);
     let builder = CreateMessage::new().content(message);
     let _ = user.dm(ctx.http(), builder).await;
 
     if active_warns.len() + 1 >= guild_config.max_warns {
-        let builder = CreateMessage::new().content(String::from("Due to exceeding the warn limit, you've been banned."));
+        let builder = CreateMessage::default().content(String::from(
+            "Due to exceeding the warn limit, you've been banned.",
+        ));
         let _ = user.dm(ctx.http(), builder).await;
+        let message = CreateReply::default().ephemeral(true);
 
         let _ = match guild.ban(ctx.http(), &user, 0).await {
-            Ok(()) => ctx.reply(format!("Banned user {}", user.name)).await,
-            Err(_) => ctx.reply(format!("Failed to ban user {}.", user.name)).await,
+            Ok(()) => ctx.send(message.content(format!("Banned user {}", user.name))).await,
+            Err(_) => ctx.send(message.content(format!("Failed to ban user {}.", user.name))).await,
         };
     }
 
