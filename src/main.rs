@@ -16,10 +16,9 @@
 use bot_commands::{ban_user, change_reason, check_warns, clear_warns, kick_user, mute_user, unban, unmute, unwarn};
 use mongodb::options::ClientOptions;
 use mongodb::{Client as MongoClient, Database};
-use poise::serenity_prelude::{self as serenity};
+use poise::serenity_prelude::{self as serenity, async_trait, ChannelId, GuildId, Member, Message, MessageId, MessageUpdateEvent};
 use poise::serenity_prelude::prelude::*;
 use std::env;
-use std::sync::Arc;
 
 use crate::bot_commands::warn_user;
 mod bot_commands;
@@ -66,14 +65,6 @@ async fn main() -> anyhow::Result<()> {
                 check_warns(),
                 ban_user(),
             ],
-            prefix_options: poise::PrefixFrameworkOptions {
-                prefix: Some("~".into()),
-                edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(
-                    std::time::Duration::from_secs(3600),
-                ))),
-                case_insensitive_commands: true,
-                ..Default::default()
-            },
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
@@ -87,9 +78,27 @@ async fn main() -> anyhow::Result<()> {
     let intents = GatewayIntents::all();
     let mut client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
+        .event_handler(Handler)
         .await?;
 
     client.start().await?;
 
     Ok(())
+}
+
+struct Handler;
+
+#[async_trait]
+impl EventHandler for Handler {
+    async fn guild_member_addition(&self, _ctx: poise::serenity_prelude::Context, new_member: Member) {
+
+    }
+
+    async fn message_update(&self, ctx: poise::serenity_prelude::Context, old_if_available: Option<Message>, new: Option<Message>, event: MessageUpdateEvent) {
+        println!("Old: {}  New: {}", old_if_available.is_some(), new.is_some());
+    }
+
+    async fn message_delete(&self, ctx: poise::serenity_prelude::Context, channel_id: ChannelId, deleted_message_id: MessageId, guild_id: Option<GuildId>) {
+        println!("ChannelID: {channel_id}, MessageID: {deleted_message_id}, GuildID: {}", guild_id.unwrap());
+    }
 }
