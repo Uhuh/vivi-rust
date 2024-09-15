@@ -1,7 +1,7 @@
-use bson::{doc, oid::ObjectId, Uuid};
+use bson::{doc, oid::ObjectId, Document, Uuid};
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
-use mongodb::Database;
+use mongodb::{options::{FindOneAndUpdateOptions, ReturnDocument}, Database};
 use poise::serenity_prelude::{Color, CreateEmbed, CreateMessage, GuildId, Timestamp, UserId};
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
@@ -39,7 +39,13 @@ pub struct Case {
 }
 
 impl Case {
-    pub fn new(guild_id: GuildId, user_id: UserId, mod_id: UserId, reason: String, case_type: CaseType) -> Self {
+    pub fn new(
+        guild_id: GuildId,
+        user_id: UserId,
+        mod_id: UserId,
+        reason: String,
+        case_type: CaseType,
+    ) -> Self {
         Self {
             guild_id,
             user_id,
@@ -105,14 +111,31 @@ pub fn create_case_embed(case: &Case) -> CreateEmbed {
     CreateEmbed::new()
         .title(format!("{} | Case {}", case.case_type, case.case_id))
         .fields(vec![
-            ("User",
-            format!("{} (<@{}>)", case.user_id, case.user_id),
-            true),
-            ("Moderator", format!("<@{}>", case.user_id), true)
+            (
+                "User",
+                format!("{} (<@{}>)", case.user_id, case.user_id),
+                true,
+            ),
+            ("Moderator", format!("<@{}>", case.user_id), true),
         ])
         .field("Reason", case.reason.clone(), false)
         .color(Color::new(6_573_123))
         .timestamp(Timestamp::now())
+}
+
+pub async fn update_case(
+    case_id: Uuid,
+    update_doc: Document,
+    database: &Database
+) -> anyhow::Result<Option<Case>> {
+    Ok(database
+        .collection::<Case>("cases")
+        .find_one_and_update(doc! {
+            "case_id": case_id
+        }, update_doc)
+        .return_document(ReturnDocument::After)
+        .await?
+    )
 }
 
 pub async fn get_user_cases(
@@ -149,6 +172,23 @@ pub async fn get_users_active_warns(
                 // Unsure as to why $gte works but $gt does NOT work.
                 "$gte": expiration_date
             }
+        })
+        .await?;
+
+    Ok(warns.try_collect().await?)
+}
+
+pub async fn get_user_warns(
+    guild_id: GuildId,
+    user_id: UserId,
+    database: &Database,
+) -> anyhow::Result<Vec<Case>> {
+    let warns = database
+        .collection::<Case>("cases")
+        .find(doc! {
+            "user_id": user_id.to_string(),
+            "guild_id": guild_id.to_string(),
+            "case_type": CaseType::Warn.to_string(),
         })
         .await?;
 

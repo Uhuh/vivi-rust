@@ -13,7 +13,7 @@
 #![allow(clippy::missing_errors_doc, clippy::module_name_repetitions, clippy::expect_used)]
 #![forbid(unsafe_code)]
 
-use bot_commands::{ban_user, change_reason, check_warns, clear_warns, kick_user, mute_user, unban, unmute, unwarn};
+use bot_commands::{ban_user, change_reason, check_warns, kick_user, mute_user, unban, unmute, unwarn};
 use mongodb::options::ClientOptions;
 use mongodb::{Client as MongoClient, Database};
 use poise::serenity_prelude::{self as serenity, async_trait, ChannelId, GuildId, Member, Message, MessageId, MessageUpdateEvent};
@@ -61,7 +61,6 @@ async fn main() -> anyhow::Result<()> {
                 change_reason(),
                 mute_user(),
                 kick_user(),
-                clear_warns(),
                 check_warns(),
                 ban_user(),
             ],

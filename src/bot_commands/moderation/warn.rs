@@ -48,16 +48,16 @@ pub async fn warn_user(
 
     let message = format!("You've been warned in **{}**\n\n**Reason**: {reason}", guild.name);
     let builder = CreateMessage::new().content(message);
-    let _ = user.dm(ctx.http(), builder).await;
+    let _ = user.dm(ctx, builder).await;
 
     if active_warns.len() + 1 >= guild_config.max_warns {
         let builder = CreateMessage::default().content(String::from(
             "Due to exceeding the warn limit, you've been banned.",
         ));
-        let _ = user.dm(ctx.http(), builder).await;
+        let _ = user.dm(ctx, builder).await;
         let message = CreateReply::default().ephemeral(true);
 
-        let _ = match guild.ban(ctx.http(), &user, 0).await {
+        let _ = match guild.ban(ctx, &user, 0).await {
             Ok(()) => ctx.send(message.content(format!("Banned user {}", user.name))).await,
             Err(_) => ctx.send(message.content(format!("Failed to ban user {}.", user.name))).await,
         };

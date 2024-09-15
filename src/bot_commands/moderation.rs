@@ -1,6 +1,5 @@
 mod ban;
 mod check_warn;
-mod clear_warns;
 mod kick;
 mod mute;
 mod reason;
@@ -11,7 +10,6 @@ mod warn;
 
 pub use ban::*;
 pub use check_warn::*;
-pub use clear_warns::*;
 pub use kick::*;
 pub use mute::*;
 pub use reason::*;
